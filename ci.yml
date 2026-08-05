@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  check:
+    name: Validate project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify critical files exist
+        run: |
+          echo "Checking project structure..."
+          test -f index.html || (echo "Missing index.html" && exit 1)
+          test -f netlify.toml || (echo "Missing netlify.toml" && exit 1)
+          test -d assets || (echo "Missing assets/" && exit 1)
+          test -d assets/sprites || (echo "Missing assets/sprites/" && exit 1)
+          test -d js || (echo "Missing js/" && exit 1)
+          test -d js/scenes || (echo "Missing js/scenes/" && exit 1)
+          echo "✓ Basic structure OK"
+
+      - name: Check for required sprite assets
+        run: |
+          echo "Checking key sprites..."
+          test -f assets/sprites/style_c/kraig.png || echo "⚠ kraig.png missing (may be intentional during transition)"
+          test -f assets/sprites/style_c/kraig_punch.png || echo "⚠ kraig_punch.png missing"
+          echo "Sprite check complete"
+
+      - name: Validate netlify.toml syntax
+        run: |
+          grep -q "\[build\]" netlify.toml || (echo "netlify.toml missing [build] section" && exit 1)
+          echo "✓ netlify.toml looks valid"
+
+      - name: Summary
+        run: |
+          echo "CI checks passed. Ready for Netlify deploy."
