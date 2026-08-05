@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="gb-build" content="20260805e" />
+  <title>Golden Bouffant</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%; background: #0a0c10; overflow: hidden;
+      touch-action: none; font-family: 'Courier New', monospace;
+      -webkit-user-select: none; user-select: none;
+    }
+    #game-container {
+      width: 100%; height: 100%; position: relative;
+      display: flex; justify-content: center; align-items: center;
+    }
+    canvas {
+      display: block; max-width: 100%; max-height: 100%;
+      position: relative; z-index: 1;
+    }
+    #intro-video {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; z-index: 5; background: #0a0c10;
+      pointer-events: none; display: none;
+    }
+    #title-overlay {
+      position: fixed; inset: 0; z-index: 20; display: none;
+      flex-direction: column; align-items: center; justify-content: space-between;
+      padding: 12vh 5vw 8vh;
+      background: linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.85) 100%);
+      pointer-events: auto;
+    }
+    #title-overlay h1 {
+      font-family: Georgia, serif; font-size: clamp(32px, 9vw, 48px);
+      color: #c9a227; text-shadow: 0 0 12px #000, 2px 2px 0 #000;
+      text-align: center; line-height: 1.05;
+    }
+    #title-overlay .sub {
+      font-size: 12px; color: #8b7355; letter-spacing: 2px; margin-top: 8px; text-align: center;
+    }
+    #title-overlay .card {
+      background: rgba(10,8,6,0.9); border: 1px solid #5c3030;
+      padding: 16px 18px; max-width: 340px; width: 92%;
+      color: #c9b896; font-size: 13px; line-height: 1.45; text-align: center;
+    }
+    #title-overlay .card .tx { color: #8b5050; font-size: 11px; margin-bottom: 10px; letter-spacing: 1px; }
+    #title-overlay .hint { color: #a08060; font-size: 12px; margin-bottom: 12px; text-align: center; }
+    #start-run-btn {
+      appearance: none; border: 3px solid #c0392b; background: #8b1a1a;
+      color: #f5e6c8; font-family: Georgia, serif; font-size: 22px;
+      padding: 14px 48px; cursor: pointer; text-shadow: 1px 1px 0 #000;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+      position: relative; z-index: 30;
+    }
+    #start-run-btn:active { background: #a52222; transform: scale(0.98); }
+    #run-loader {
+      position: fixed; inset: 0; z-index: 50; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(10,12,16,0.92); pointer-events: all;
+    }
+    #run-loader .bar-track {
+      width: min(280px, 80vw); height: 16px; background: #2a1a10;
+      border: 2px solid #5c4033; border-radius: 2px; overflow: hidden;
+    }
+    #run-loader .bar-fill {
+      height: 100%; width: 0%; background: #c9a227;
+      transition: width 0.15s linear;
+    }
+    #run-loader .pct { color: #e8d8b0; font-size: 14px; margin-top: 12px; }
+    #run-loader .msg { color: #8b7355; font-size: 12px; margin-bottom: 16px; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+  <video id="intro-video" playsinline webkit-playsinline muted loop preload="auto"></video>
+
+  <div id="title-overlay">
+    <div>
+      <h1>GOLDEN<br>BOUFFANT</h1>
+      <div class="sub">KRAIG'S WIG ODYSSEY</div>
+    </div>
+    <div class="card">
+      <div class="tx">— TRANSMISSION —</div>
+      Rotund. Balding. Gray house dress.<br>
+      City overrun by feral wildlife &amp; pirates.<br><br>
+      A wig is the only thing keeping you alive.<br>
+      One day. Then it dies with you.<br><br>
+      Find the Golden Bouffant.<br>
+      Or don't come back.
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;width:100%;">
+      <div class="hint" id="audio-hint">TAP START TO BEGIN</div>
+      <button type="button" id="start-run-btn">START RUN</button>
+      <div class="hint" id="cache-hint" style="margin-top:10px;font-size:10px;color:#6a5a4a;max-width:260px;line-height:1.35;">
+        Black screen after update? Hard refresh to clear cache:<br/>
+        Mac: Cmd+Shift+R · Windows: Ctrl+Shift+R
+      </div>
+    </div>
+  </div>
+
+  <div id="run-loader">
+    <div class="msg" id="run-loader-msg">BUILDING CITY…</div>
+    <div class="bar-track"><div class="bar-fill" id="run-loader-fill"></div></div>
+    <div class="pct" id="run-loader-pct">0%</div>
+  </div>
+
+  <div id="game-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <script src="js/config.js?v=20260805e"></script>
+  <script src="js/systems/QualityTier.js?v=20260805e"></script>
+  <script>
+  // Timestamped debug logger
+  window.GBLog = function (tag) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    var ms = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now().toFixed(0)
+      : String(Date.now());
+    var ts = new Date().toISOString().substr(11, 12); // HH:mm:ss.sss
+    console.log.apply(console, ['[' + ts + ' +' + ms + 'ms][' + tag + ']'].concat(args));
+  };
+  window.GBLog.warn = function (tag) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    var ms = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now().toFixed(0) : String(Date.now());
+    var ts = new Date().toISOString().substr(11, 12);
+    console.warn.apply(console, ['[' + ts + ' +' + ms + 'ms][' + tag + ']'].concat(args));
+  };
+  window.GBLog.error = function (tag) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    var ms = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now().toFixed(0) : String(Date.now());
+    var ts = new Date().toISOString().substr(11, 12);
+    console.error.apply(console, ['[' + ts + ' +' + ms + 'ms][' + tag + ']'].concat(args));
+  };
+  // Safe no-op if called before definition in odd load order
+  if (typeof window.GBLog !== 'function') {
+    window.GBLog = function () {};
+    window.GBLog.warn = window.GBLog.error = window.GBLog;
+  }
+  window.GBLog('Boot', 'GBLog ready, build 20260805e');
+  window.GB_BUILD = '20260805e';
+</script>
+  <script src="js/systems/MusicManager.js?v=20260805e"></script>
+  <script src="js/systems/WigData.js?v=20260805e"></script>
+  <script src="js/systems/DialogueData.js?v=20260805e"></script>
+  <script src="js/systems/ProcTextures.js?v=20260805e"></script>
+  <script src="js/systems/Haptics.js?v=20260805e"></script>
+  <script src="js/systems/NoiseSynth.js?v=20260805e"></script>
+  <script src="js/systems/Journal.js?v=20260805e"></script>
+  <script src="js/systems/WeightedRandom.js?v=20260805e"></script>
+  <script src="js/systems/SpriteAtlas.js?v=20260805e"></script>
+  <script src="js/systems/PerfMonitor.js?v=20260805e"></script>
+  <script src="js/systems/LootTables.js?v=20260805e"></script>
+  <script src="js/scenes/BootScene.js?v=20260805e"></script>
+  <script src="js/scenes/TitleScene.js?v=20260805e"></script>
+  <script src="js/scenes/GameScene.js?v=20260805e"></script>
+  <script src="js/scenes/UIScene.js?v=20260805e"></script>
+  <script src="js/scenes/EndScene.js?v=20260805e"></script>
+  <script src="js/main.js?v=20260805e"></script>
+  <script>
+    window.GBLoader = {
+      show: function (msg) {
+        var el = document.getElementById('run-loader');
+        if (!el) return;
+        el.style.display = 'flex';
+        var m = document.getElementById('run-loader-msg');
+        if (m && msg) m.textContent = msg;
+        this.set(0);
+      },
+      set: function (pct) {
+        pct = Math.max(0, Math.min(100, pct|0));
+        var f = document.getElementById('run-loader-fill');
+        var p = document.getElementById('run-loader-pct');
+        if (f) f.style.width = pct + '%';
+        if (p) p.textContent = pct + '%';
+      },
+      hide: function () {
+        var el = document.getElementById('run-loader');
+        if (el) el.style.display = 'none';
+      }
+    };
+
+    window.GBTitle = {
+      shown: false,
+      onStart: null,
+      show: function () {
+        var ov = document.getElementById('title-overlay');
+        var vid = document.getElementById('intro-video');
+        ov.style.display = 'flex';
+        this.shown = true;
+        if (vid) {
+          vid.style.display = 'block';
+          if (!vid.getAttribute('src')) vid.src = 'assets/video/intro_loop.mp4';
+          vid.muted = true;
+          var p = vid.play();
+          if (p && p.catch) p.catch(function () {});
+        }
+      },
+      hide: function () {
+        var ov = document.getElementById('title-overlay');
+        var vid = document.getElementById('intro-video');
+        ov.style.display = 'none';
+        this.shown = false;
+        if (vid) {
+          try { vid.pause(); } catch (e) {}
+          vid.removeAttribute('src');
+          vid.load();
+          vid.style.display = 'none';
+        }
+        var gc = document.getElementById('game-container');
+        if (gc) { gc.style.zIndex = '40'; gc.style.position = 'relative'; }
+        var canvases = document.querySelectorAll('canvas');
+        for (var i = 0; i < canvases.length; i++) {
+          canvases[i].style.zIndex = '41';
+          canvases[i].style.visibility = 'visible';
+          canvases[i].style.opacity = '1';
+        }
+      }
+    };
+
+    document.getElementById('start-run-btn').addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (window.GBLog) GBLog('HTML', 'START RUN clicked'); else console.log('[HTML] START RUN clicked');
+      var hint = document.getElementById('audio-hint');
+      if (hint) hint.textContent = 'LOADING…';
+      try { if (typeof Haptics !== 'undefined') Haptics.uiTap(); } catch (err) {}
+      if (window.GBLog) GBLog('HTML', 'GBTitle.onStart?', !!(window.GBTitle && window.GBTitle.onStart)); else console.log('[HTML] onStart?', !!(window.GBTitle && window.GBTitle.onStart));
+      if (window.GBTitle && typeof window.GBTitle.onStart === 'function') {
+        if (window.GBLog) GBLog('HTML', 'calling GBTitle.onStart');
+        window.GBTitle.onStart();
+      } else if (window.__gbGame) {
+        if (window.GBLog) GBLog('HTML', 'fallback path — no GBTitle.onStart'); else console.warn('[HTML] fallback');
+        // Fallback if Title callback missing
+        try {
+          var sc = window.__gbGame.scene.getScene('Title');
+          if (sc && sc.beginRun) sc.beginRun();
+          else window.__gbGame.scene.start('Game');
+        } catch (err2) { console.warn(err2); }
+      }
+    }, false);
+  </script>
+</body>
+</html>

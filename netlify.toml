@@ -1,0 +1,96 @@
+# Golden Bouffant — Netlify config (static Phaser game)
+# Deploy the CONTENTS of this folder so index.html is at the site root.
+
+[build]
+  # No build step — pure static files
+  command = "echo 'Static site — no build required'"
+  publish = "."
+
+# Faster deploys: ignore editor junk
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = false
+  minify = false
+
+[build.processing.js]
+  bundle = false
+  minify = false
+
+[build.processing.html]
+  pretty_urls = false
+
+[build.processing.images]
+  compress = true
+
+# ---------- Caching & headers ----------
+# HTML: always revalidate so players get new builds after deploy
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# JS: short cache — code changes often during iteration
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Content-Type = "application/javascript; charset=utf-8"
+
+# Sprites / static images
+[[headers]]
+  for = "/assets/sprites/*"
+  [headers.values]
+    Cache-Control = "public, max-age=60, must-revalidate"
+
+# Audio — long cache, correct types
+[[headers]]
+  for = "/assets/audio/*.ogg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, immutable"
+    Content-Type = "audio/ogg"
+
+[[headers]]
+  for = "/assets/audio/*.mp3"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, immutable"
+    Content-Type = "audio/mpeg"
+
+[[headers]]
+  for = "/assets/audio/*.wav"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, immutable"
+    Content-Type = "audio/wav"
+
+# Video — long cache; range requests work by default on Netlify CDN
+[[headers]]
+  for = "/assets/video/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800, immutable"
+    Content-Type = "video/mp4"
+    Accept-Ranges = "bytes"
+
+# ---------- Redirects ----------
+# SPA-style fallback not needed; keep 404 clean
+[[redirects]]
+  from = "/play"
+  to = "/"
+  status = 302
+
+# Optional pretty alias
+[[redirects]]
+  from = "/game"
+  to = "/"
+  status = 302
